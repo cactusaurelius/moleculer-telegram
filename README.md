@@ -10,7 +10,7 @@ This is a mixin for MoleculerJs to generate a telegram bot UI to easily call dis
 
 ```
 $ npm install moleculer-telegram
-```****
+```
 
 
 ## Usage
