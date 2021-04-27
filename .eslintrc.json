@@ -1,0 +1,33 @@
+{
+  "extends": [
+    "plugin:@shopify/typescript",
+    "plugin:@shopify/node",
+    "plugin:@shopify/prettier"
+  ],
+  "parserOptions": {
+    "project": "tsconfig.json"
+  },
+  "rules": {
+    "@typescript-eslint/naming-convention": [
+      "error",
+      {
+        "selector": "parameterProperty",
+        "format": ["snake_case", "camelCase"]
+      }
+    ],
+    "lines-around-comment": "off",
+    "import/no-unresolved": "off",
+    "import/no-anonymous-default-export": "off",
+    "babel/object-curly-spacing": ["error", "always"],
+    "no-warning-comments": "off",
+    "promise/no-nesting": "off",
+    "require-atomic-updates": "off",
+    "no-negated-condition": "off",
+    "callback-return": "off",
+    "no-return-await": "off",
+    "no-throw-literal": "off",
+    "no-fallthrough": "warn",
+    "@typescript-eslint/keyword-spacing": "off",
+    "no-unused-vars": ["error", { "varsIgnorePattern": "^_" }]
+  }
+}
