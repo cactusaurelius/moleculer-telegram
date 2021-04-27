@@ -2,7 +2,7 @@
  * This example demonstrates how use TelegramMixin
  * */
 
-import { ServiceBroker } from "moleculer";
+import { Context, ServiceBroker } from "moleculer";
 
 // ----
 
@@ -10,46 +10,48 @@ import { TelegramMixin } from "../../src";
 
 // Create broker
 const broker = new ServiceBroker({});
+process.env.TELEGRAM_BOT_TOKEN = "Token";
 
 // Load Service
 broker.createService({
   name: "someservice",
-  mixins: [TelegramMixin()],
-  settings: {
-    path: "/api",
-
-    routes: [
-      {
-        path: "",
-
-        // You should disable body parsers
-        bodyParsers: {
-          json: false,
-          urlencoded: false,
-          raw: {
-            type: "*/*",
-          },
-        },
-
-        mergeParams: false,
-
-        aliases: {
-          // File upload from HTML form
-          "POST /raw": "echo.params",
-        },
-      },
-    ],
-  },
-});
-
-broker.createService({
-  name: "echo",
+  mixins: [TelegramMixin({ usernames: ["amzzak"] })],
   actions: {
-    params: {
-      handler(ctx) {
-        return {
-          body: ctx.params.body.toString(),
-        };
+    hello: {
+      telegram: true,
+      handler() {
+        return "Hello World!";
+      },
+    },
+    notPublished: {
+      telegram: false,
+      handler() {
+        return "You are not supposed to see this";
+      },
+    },
+    withParams: {
+      telegram: {
+        default: {
+          name: "Adam",
+          from: "Chicago",
+        },
+        auth: true,
+      },
+      handler(ctx: Context<{ name: string; from: string }>) {
+        return `Hello ${ctx.params.name} from ${ctx.params.from}`;
+      },
+    },
+    returnsSmth: {
+      telegram: {
+        params: {
+          name: { type: "interact" },
+          from: { type: "choose" },
+          sex: { type: "toggle" },
+        },
+        auth: false,
+      },
+      handler() {
+        return "Hello World!";
       },
     },
   },
