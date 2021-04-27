@@ -5,6 +5,7 @@
       "*": ["types/*"]
     },
     "esModuleInterop": true,
+    "declaration": true,
     "experimentalDecorators": true,
     "noImplicitAny": true,
     "module": "commonjs",
@@ -12,9 +13,9 @@
     "moduleResolution": "node",
     "pretty": true,
     "resolveJsonModule": true,
-    "types": ["jest", "node"],
+    "types": [ "node"],
     "sourceMap": true,
-    "target": "ES2020",
+    "target": "es2015",
     "rootDir": "src",
     "outDir": "dist",
     "baseUrl": "./"
