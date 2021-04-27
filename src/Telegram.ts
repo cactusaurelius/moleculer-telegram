@@ -1,13 +1,18 @@
-import { ActionSchema, ServiceSchema } from "moleculer";
+import { ServiceSchema } from "moleculer";
 import { Telegraf, Context as TelegrafContext } from "telegraf";
-import ngrok from "ngrok";
+// TODO: sessions
+
 import {
   MenuTemplate,
   MenuMiddleware,
   createBackMainMenuButtons,
   deleteMenuFromContext,
 } from "telegraf-inline-menu";
-type MyContext = TelegrafContext & { match: RegExpExecArray | undefined };
+type MyContext = TelegrafContext & {
+  match: RegExpExecArray | undefined;
+  // session: any;
+  auth: boolean;
+};
 // TODO: Options for single service or all registry
 // TODO: Configure to be event-based
 // TODO: Session management
@@ -15,7 +20,8 @@ type MyContext = TelegrafContext & { match: RegExpExecArray | undefined };
 // TODO: session save params
 // TODO: service custom functinos for telegram
 export interface TelegramActionSettings {
-  auth: (ctx: MyContext) => {} | string;
+  auth: (ctx: MyContext) => {} | string | boolean;
+  default: any;
   params: {
     [K: string]: {
       type: "toggle" | "select" | "interact" | "choose";
@@ -25,15 +31,17 @@ export interface TelegramActionSettings {
 export type TelegramAction = TelegramActionSettings | boolean;
 // TODO: Broker custom logger
 export function TelegramLogger() {}
-export function TelegramMixin(): ServiceSchema {
-  const bot = new Telegraf<MyContext>(
-    process.env.BOT_TOKEN || "804575218:AAHyzf1CSzLZfRYWaHWonEqZZt6h2G2IY_M"
-  );
+
+export function TelegramMixin({
+  botToken = process.env.TELEGRAM_BOT_TOKEN,
+  usernames,
+}: {
+  botToken?: string;
+  usernames: string[];
+}): ServiceSchema {
+  const bot = new Telegraf<MyContext>(botToken);
   bot.use((ctx, next) => {
-    if (
-      ctx.chat.type == "private" &&
-      ctx.chat.username == (process.env.TELEGRAM_SUPER_USER || "amzzak")
-    ) {
+    if (ctx.chat.type == "private" && usernames.includes(ctx.chat.username)) {
       return next();
     } else {
       return ctx.reply(`You're Not Authorized 👎🏾`);
@@ -50,51 +58,23 @@ export function TelegramMixin(): ServiceSchema {
     return next();
   });
 
-  function addNgrok(): MenuTemplate<MyContext> {
-    const ngrokMenu = new MenuTemplate<MyContext>("Ngrok");
-
-    ngrokMenu.interact("connect", "ngrok.connect", {
-      do: async (ctx) => {
-        await ngrok.kill().catch();
-        await ctx.reply(await ngrok.connect(3000));
-        await deleteMenuFromContext(ctx);
-        return false;
-      },
-    });
-    ngrokMenu.interact("kill", "ngrok.kill", {
-      do: async (ctx) => {
-        await ngrok.kill().catch();
-        return "..";
-      },
-    });
-
-    ngrokMenu.manualRow(createBackMainMenuButtons());
-    return ngrokMenu;
-  }
   function generateMenu(services: ServiceSchema[]): MenuMiddleware<MyContext> {
     const menu = new MenuTemplate<MyContext>("Services");
-    menu.submenu("Ngrok", "ngrok", addNgrok());
-
     services.forEach((service) => {
       const serviceMenu = new MenuTemplate<MyContext>(service.name);
       try {
-        Object.keys(service.actions).forEach((action) => {
-          serviceMenu.interact(
-            (service.actions[action] as ActionSchema).name,
-            (service.actions[action] as ActionSchema).name,
-            {
+        Object.entries<any>(service.actions).forEach(
+          ([action, { telegram }]) => {
+            serviceMenu.interact(action, action, {
               do: async (ctx) => {
-                const res = await this.broker.call(
-                  `${(service.actions[action] as ActionSchema).name}`
-                );
+                const res = await this.broker.call(action);
                 await ctx.reply(res);
-                // return '..';
                 await deleteMenuFromContext(ctx);
                 return false;
               },
-            }
-          );
-        });
+            });
+          }
+        );
         serviceMenu.manualRow(createBackMainMenuButtons());
         menu.submenu(service.name, service.name, serviceMenu);
       } catch {}
@@ -113,7 +93,6 @@ export function TelegramMixin(): ServiceSchema {
     methods: {
       async onChange() {
         // await bot.stop();
-
         const services: Array<ServiceSchema> = this.broker.registry.getServiceList(
           {
             withActions: true,
@@ -129,9 +108,6 @@ export function TelegramMixin(): ServiceSchema {
         console.log(new Date(), "Bot started as", bot.botInfo?.username);
       },
     },
-    // async started() {
-    //   bot.launch();
-    // },
     async stopped() {
       bot.stop();
     },
