@@ -65,6 +65,7 @@ export function TelegramMixin({
       try {
         Object.entries<any>(service.actions).forEach(
           ([action, { telegram }]) => {
+            // TODO: parse default params
             serviceMenu.interact(action, action, {
               do: async (ctx) => {
                 const res = await this.broker.call(action);

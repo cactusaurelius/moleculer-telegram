@@ -34,6 +34,8 @@ broker.createService({
         default: {
           name: "Adam",
           from: "Chicago",
+          // TODO:
+          // isHappy: (ctx: Context) => UserModel.findOne({name: "Adam"}).then((adam) => adam.isHappy)
         },
         auth: true,
       },
