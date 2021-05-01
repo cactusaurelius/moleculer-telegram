@@ -31,7 +31,8 @@ broker.createService({
     },
     withParams: {
       telegram: {
-        default: {
+        name: "Say Hello",
+        defParam: {
           name: "Adam",
           from: "Chicago",
           // TODO:
@@ -45,6 +46,7 @@ broker.createService({
     },
     returnsSmth: {
       telegram: {
+        name: "Say Only Hello",
         params: {
           name: { type: "interact" },
           from: { type: "choose" },

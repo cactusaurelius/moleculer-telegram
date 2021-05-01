@@ -1,4 +1,4 @@
-import { ServiceSchema } from "moleculer";
+import { ServiceActionsSchema, ServiceSchema } from "moleculer";
 import { Telegraf, Context as TelegrafContext } from "telegraf";
 // TODO: sessions
 
@@ -21,12 +21,13 @@ type MyContext = TelegrafContext & {
 // TODO: service custom functinos for telegram
 export interface TelegramActionSettings {
   auth: (ctx: MyContext) => {} | string | boolean;
-  default: any;
+  defParam: any;
   params: {
     [K: string]: {
       type: "toggle" | "select" | "interact" | "choose";
     };
   };
+  name: string;
 }
 export type TelegramAction = TelegramActionSettings | boolean;
 // TODO: Broker custom logger
@@ -59,17 +60,26 @@ export function TelegramMixin({
     return next();
   });
 
-  function generateTelegramMenu(services: ServiceSchema[]): MenuMiddleware<MyContext> {
+  function generateMenuFromAction(
+    actin: string,
+    settings: ServiceActionsSchema
+  ) {}
+  function generateTelegramMenu(
+    services: ServiceSchema[]
+  ): MenuMiddleware<MyContext> {
     const menu = new MenuTemplate<MyContext>("Services");
     services.forEach((service) => {
       const serviceMenu = new MenuTemplate<MyContext>(service.name);
       try {
         Object.entries<any>(service.actions).forEach(
           ([action, { telegram }]) => {
+            if (!telegram) return;
+            const { defParam } = telegram;
             // TODO: parse default params
             serviceMenu.interact(action, action, {
               do: async (ctx) => {
-                const res = await this.broker.call(action);
+                this.logger.info(`Calling Action ${action} from Telegram`);
+                const res = await this.broker.call(action, defParam || {});
                 await ctx.reply(res);
                 await deleteMenuFromContext(ctx);
                 return false;
@@ -95,7 +105,6 @@ export function TelegramMixin({
     methods: {
       generateTelegramMenu,
       async onChange() {
-        // await bot.stop();
         const services: Array<ServiceSchema> = this.broker.registry.getServiceList(
           {
             withActions: true,
