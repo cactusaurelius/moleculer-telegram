@@ -39,6 +39,7 @@ export function TelegramMixin({
   botToken?: string;
   usernames: string[];
 }): ServiceSchema {
+  // if(botToken == undefined) throw 'Please set telegram bot token'
   const bot = new Telegraf<MyContext>(botToken);
   bot.use((ctx, next) => {
     if (ctx.chat.type == "private" && usernames.includes(ctx.chat.username)) {
@@ -58,7 +59,7 @@ export function TelegramMixin({
     return next();
   });
 
-  function generateMenu(services: ServiceSchema[]): MenuMiddleware<MyContext> {
+  function generateTelegramMenu(services: ServiceSchema[]): MenuMiddleware<MyContext> {
     const menu = new MenuTemplate<MyContext>("Services");
     services.forEach((service) => {
       const serviceMenu = new MenuTemplate<MyContext>(service.name);
@@ -92,6 +93,7 @@ export function TelegramMixin({
       },
     },
     methods: {
+      generateTelegramMenu,
       async onChange() {
         // await bot.stop();
         const services: Array<ServiceSchema> = this.broker.registry.getServiceList(
@@ -99,7 +101,7 @@ export function TelegramMixin({
             withActions: true,
           }
         );
-        const menu = generateMenu.bind(this)(services);
+        const menu = this.generateTelegramMenu.bind(this)(services);
         bot.command("start", async (ctx) => menu.replyToContext(ctx));
         bot.use(menu.middleware());
         bot.catch((error) => {
