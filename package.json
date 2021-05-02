@@ -2,7 +2,7 @@
   "name": "moleculer-telegram",
   "version": "1.0.3",
   "engines": {
-    "node": ">= 12.x.x"
+    "node": ">= 14.x.x"
   },
   "description": "Interactive Telegram-bot UI to call moleculer actions",
   "main": "dist/index.js",
