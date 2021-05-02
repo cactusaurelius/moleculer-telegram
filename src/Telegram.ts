@@ -8,13 +8,8 @@ import {
   createBackMainMenuButtons,
   deleteMenuFromContext,
 } from "telegraf-inline-menu";
-type MyContext = TelegrafContext & {
-  match: RegExpExecArray | undefined;
-  // session: any;
-  auth: boolean;
-};
-// TODO: Options for single service or all registry
-// TODO: Configure to be event-based
+// import TelegrafStatelessQuestion from "telegraf-stateless-question";
+
 // TODO: Session management
 // TODO: Auth
 // TODO: session save params
@@ -40,8 +35,18 @@ export function TelegramMixin({
   botToken?: string;
   usernames: string[];
 }): ServiceSchema {
-  // if(botToken == undefined) throw 'Please set telegram bot token'
   const bot = new Telegraf<MyContext>(botToken);
+
+  // const myQuestion = new TelegrafStatelessQuestion<MyContext>(
+  //   "unique",
+  //   async (context, additionalState) => {
+  //     const answer = context.message.text;
+  //     console.log("user responded with", answer);
+  //     await replyMenuToContext(menuTemplate, context, additionalState);
+  //   }
+  // );
+  // bot.use(myQuestion.middleware());
+
   bot.use((ctx, next) => {
     if (ctx.chat.type == "private" && usernames.includes(ctx.chat.username)) {
       return next();
