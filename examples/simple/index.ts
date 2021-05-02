@@ -39,7 +39,7 @@ broker.createService({
           // isHappy: (ctx: Context) => UserModel.findOne({name: "Adam"}).then((adam) => adam.isHappy)
         },
         auth: true,
-        async: false,
+        async: true,
       },
       handler(ctx: Context) {
         return `Called with params ${JSON.stringify(ctx.params)}`;
@@ -50,11 +50,11 @@ broker.createService({
         name: "Say Only Hello",
         params: {
           name: { type: "interact" },
-          from: { type: "choose" },
-          sex: { type: "toggle" },
+          sex: { type: "select", choices: ["Male", "Female"] },
+          hungry: { type: "toggle" },
         },
         auth: false,
-        async: true,
+        async: false,
       },
       handler(ctx: Context) {
         return `Called with params ${JSON.stringify(ctx.params)}`;
