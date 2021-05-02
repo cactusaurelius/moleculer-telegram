@@ -130,3 +130,24 @@ export function TelegramMixin({
     },
   };
 }
+
+export interface TelegramActionSettings {
+  auth: (ctx: MyContext) => {} | string | boolean;
+  defParam: any;
+  params: {
+    [K: string]: {
+      type: "toggle" | "select" | "choose" | "question";
+      settings: any;
+    };
+  };
+  name: string;
+  async: boolean;
+}
+export type TelegramAction = TelegramActionSettings | boolean;
+
+type MyContext = TelegrafContext & {
+  match: RegExpExecArray | undefined;
+  session?: any;
+  auth: boolean;
+  message: { text: string };
+};
