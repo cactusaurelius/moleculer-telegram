@@ -31,7 +31,8 @@
   "dependencies": {
     "moleculer": "^0.14.11",
     "telegraf": "^4.3.0",
-    "telegraf-inline-menu": "^6.2.1"
+    "telegraf-inline-menu": "^6.2.1",
+    "telegraf-stateless-question": "^2.0.1"
   },
   "devDependencies": {
     "@types/node": "^15.0.1",

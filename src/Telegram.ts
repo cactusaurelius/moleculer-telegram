@@ -7,25 +7,17 @@ import {
   MenuMiddleware,
   createBackMainMenuButtons,
   deleteMenuFromContext,
+  // getMenuOfPath,
+  // replyMenuToContext,
 } from "telegraf-inline-menu";
 // import TelegrafStatelessQuestion from "telegraf-stateless-question";
 
 // TODO: Session management
-// TODO: Auth
-// TODO: session save params
+// TODO: Auth Middleware
 // TODO: service custom functinos for telegram
-export interface TelegramActionSettings {
-  auth: (ctx: MyContext) => {} | string | boolean;
-  defParam: any;
-  params: {
-    [K: string]: {
-      type: "toggle" | "select" | "interact" | "choose";
-    };
-  };
-  name: string;
-}
-export type TelegramAction = TelegramActionSettings | boolean;
+
 // TODO: Broker custom logger
+
 export function TelegramLogger() {}
 
 export function TelegramMixin({
@@ -54,6 +46,7 @@ export function TelegramMixin({
       return ctx.reply(`You're Not Authorized 👎🏾`);
     }
   });
+
   bot.use(async (ctx, next) => {
     if (ctx.callbackQuery && "data" in ctx.callbackQuery) {
       console.log(
@@ -69,37 +62,7 @@ export function TelegramMixin({
     actin: string,
     settings: ServiceActionsSchema
   ) {}
-  function generateTelegramMenu(
-    services: ServiceSchema[]
-  ): MenuMiddleware<MyContext> {
-    const menu = new MenuTemplate<MyContext>("Services");
-    services.forEach((service) => {
-      const serviceMenu = new MenuTemplate<MyContext>(service.name);
-      try {
-        Object.entries<any>(service.actions).forEach(
-          ([action, { telegram }]) => {
-            if (!telegram) return;
-            const { defParam } = telegram;
-            // TODO: parse default params
-            serviceMenu.interact(action, action, {
-              do: async (ctx) => {
-                this.logger.info(`Calling Action ${action} from Telegram`);
-                const res = await this.broker.call(action, defParam || {});
-                await ctx.reply(res);
-                await deleteMenuFromContext(ctx);
-                return false;
-              },
-            });
-          }
-        );
-        serviceMenu.manualRow(createBackMainMenuButtons());
-        menu.submenu(service.name, service.name, serviceMenu);
-      } catch {}
-    });
-    const menuMiddleware = new MenuMiddleware<MyContext>("/", menu);
-    this.logger.info(menuMiddleware.tree());
-    return menuMiddleware;
-  }
+
   return {
     name: "",
     events: {
@@ -108,21 +71,134 @@ export function TelegramMixin({
       },
     },
     methods: {
-      generateTelegramMenu,
+      generateTelegramMenu(
+        services: ServiceSchema[]
+      ): MenuMiddleware<MyContext> {
+        const menu = new MenuTemplate<MyContext>("Services");
+        services.forEach((service) => {
+          // if (!service.settings.telegram) return;
+          if (typeof service.actions === "object" && service.actions !== null) {
+            const serviceMenu = new MenuTemplate<MyContext>(service.name);
+            try {
+              Object.entries<any>(service.actions).forEach(
+                ([action, settings]: [
+                  string,
+                  { telegram: TelegramActionSettings; rawName: string }
+                ]) => {
+                  const { telegram } = settings;
+                  if (!telegram) return;
+
+                  const { defParam } = telegram;
+                  if (!(typeof telegram.params === "object"))
+                    serviceMenu.interact(
+                      telegram?.name || settings.rawName,
+                      settings.rawName,
+                      {
+                        do: async (ctx) => {
+                          this.logger.info(
+                            `Calling Action ${action} from Telegram`
+                          );
+                          const res = await this.broker.call(
+                            action,
+                            defParam || {}
+                          );
+                          await ctx.reply(res);
+                          await deleteMenuFromContext(ctx);
+                          return false;
+                        },
+                      }
+                    );
+                  if (
+                    typeof telegram.params === "object" &&
+                    telegram.params !== null
+                  ) {
+                    const actionMenu = new MenuTemplate<MyContext>(
+                      settings.rawName
+                    );
+
+                    /**
+                     * Params Menu
+                     */
+                    // const paramsMenu = new MenuTemplate<MyContext>(
+                    //   `${settings.rawName}.params`
+                    // );
+
+                    // Object.entries(telegram.params).forEach(
+                    //   ([param, settings]) => {
+                    //     const { type } = settings;
+                    //     if (type === "toggle") {
+                    //       paramsMenu.toggle(param, param, {
+                    //         isSet: (ctx) => true,
+                    //         set: (ctx, newState) => {
+                    //           ctx.session.isFunny = newState;
+                    //           return newState;
+                    //         },
+                    //       });
+                    //     }
+
+                    //   }
+                    // );
+                    // paramsMenu.manualRow(createBackMainMenuButtons());
+                    // actionMenu.submenu("Params", "params", paramsMenu);
+
+                    /**
+                     * Action Call Button
+                     */
+                    actionMenu.interact("Call", `${settings.rawName}`, {
+                      do: async (ctx) => {
+                        this.logger.info(
+                          `Calling Action ${action} from Telegram`
+                        );
+                        const params = ctx.session?.actions[action]?.params;
+
+                        const res = this.broker.call(action, {
+                          ...(defParam || {}),
+                          ...(params || {}),
+                        });
+
+                        if (telegram.async) {
+                          await ctx.reply("Action Called");
+                        } else {
+                          await ctx.reply(await res);
+                        }
+                        return "..";
+                      },
+                    });
+                    actionMenu.manualRow(createBackMainMenuButtons());
+
+                    serviceMenu.submenu(
+                      telegram?.name || settings.rawName,
+                      settings.rawName,
+                      actionMenu
+                    );
+                  }
+                }
+              );
+              serviceMenu.manualRow(createBackMainMenuButtons());
+              menu.submenu(service.name, service.name, serviceMenu);
+            } catch (err) {
+              throw err;
+            }
+          }
+        });
+        const menuMiddleware = new MenuMiddleware<MyContext>("/", menu);
+        this.logger.info(menuMiddleware.tree());
+        return menuMiddleware;
+      },
       async onChange() {
         const services: Array<ServiceSchema> = this.broker.registry.getServiceList(
           {
             withActions: true,
           }
         );
-        const menu = this.generateTelegramMenu.bind(this)(services);
+        const menu = this.generateTelegramMenu(services);
         bot.command("start", async (ctx) => menu.replyToContext(ctx));
         bot.use(menu.middleware());
         bot.catch((error) => {
-          console.log("telegraf error", error);
+          this.logger.error("telegraf error", error);
         });
         await bot.launch();
-        console.log(new Date(), "Bot started as", bot.botInfo?.username);
+        this.logger.info(new Date(), "Bot started as", bot.botInfo?.username);
       },
     },
     async stopped() {
