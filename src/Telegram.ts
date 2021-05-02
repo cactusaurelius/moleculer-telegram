@@ -1,5 +1,7 @@
 import { ServiceActionsSchema, ServiceSchema } from "moleculer";
 import { Telegraf, Context as TelegrafContext } from "telegraf";
+import session from "./session";
+import * as _ from "lodash";
 // TODO: sessions
 
 import {
@@ -10,6 +12,7 @@ import {
   // getMenuOfPath,
   // replyMenuToContext,
 } from "telegraf-inline-menu";
+import { isObject } from "telegraf-inline-menu/dist/source/generic-types";
 // import TelegrafStatelessQuestion from "telegraf-stateless-question";
 
 // TODO: Session management
@@ -28,7 +31,11 @@ export function TelegramMixin({
   usernames: string[];
 }): ServiceSchema {
   const bot = new Telegraf<MyContext>(botToken);
-
+  bot.use(
+    session({
+      property: "session",
+    })
+  );
   // const myQuestion = new TelegrafStatelessQuestion<MyContext>(
   //   "unique",
   //   async (context, additionalState) => {
@@ -98,16 +105,21 @@ export function TelegramMixin({
                           this.logger.info(
                             `Calling Action ${action} from Telegram`
                           );
-                          const res = await this.broker.call(
-                            action,
-                            defParam || {}
-                          );
-                          await ctx.reply(res);
-                          await deleteMenuFromContext(ctx);
+                          const res = this.broker.call(action, defParam || {});
+                          if (telegram.async) {
+                            await ctx.reply("Action Called");
+                          } else {
+                            await ctx.reply(await res);
+                          }
+                          // await deleteMenuFromContext(ctx);
                           return false;
                         },
                       }
                     );
+
+                  /**
+                   * Params Menu
+                   */
                   if (
                     typeof telegram.params === "object" &&
                     telegram.params !== null
@@ -119,27 +131,44 @@ export function TelegramMixin({
                     /**
                      * Params Menu
                      */
-                    // const paramsMenu = new MenuTemplate<MyContext>(
-                    //   `${settings.rawName}.params`
-                    // );
+                    const paramsMenu = new MenuTemplate<MyContext>("params");
 
-                    // Object.entries(telegram.params).forEach(
-                    //   ([param, settings]) => {
-                    //     const { type } = settings;
-                    //     if (type === "toggle") {
-                    //       paramsMenu.toggle(param, param, {
-                    //         isSet: (ctx) => true,
-                    //         set: (ctx, newState) => {
-                    //           ctx.session.isFunny = newState;
-                    //           return newState;
-                    //         },
-                    //       });
-                    //     }
+                    Object.entries(telegram.params).forEach(
+                      ([param, settings]) => {
+                        const { type } = settings;
+                        if (type === "toggle") {
+                          paramsMenu.toggle(param, param, {
+                            isSet: (ctx) =>
+                              ctx.session?.actions?.[action]?.[param],
+                            set: (ctx, newState) => {
+                              _.set(
+                                ctx.session,
+                                ["actions", action, param],
+                                newState
+                              );
+                              return true;
+                            },
+                          });
+                        }
 
-                    //   }
-                    // );
-                    // paramsMenu.manualRow(createBackMainMenuButtons());
-                    // actionMenu.submenu("Params", "params", paramsMenu);
+                        if (type === "select") {
+                          paramsMenu.select(param, settings.choices, {
+                            isSet: (ctx, key) =>
+                              ctx.session?.actions?.[action]?.[param] === key,
+                            set: (ctx, key) => {
+                              _.set(
+                                ctx.session,
+                                ["actions", action, param],
+                                key
+                              );
+                              return true;
+                            },
+                          });
+                        }
+                      }
+                    );
+                    paramsMenu.manualRow(createBackMainMenuButtons());
+                    actionMenu.submenu("Params", "params", paramsMenu);
 
                     /**
                      * Action Call Button
@@ -149,7 +178,7 @@ export function TelegramMixin({
                         this.logger.info(
                           `Calling Action ${action} from Telegram`
                         );
-                        const params = ctx.session?.actions[action]?.params;
+                        const params = ctx.session.actions?.[action];
 
                         const res = this.broker.call(action, {
                           ...(defParam || {}),
@@ -212,8 +241,8 @@ export interface TelegramActionSettings {
   defParam: any;
   params: {
     [K: string]: {
-      type: "toggle" | "select" | "choose" | "question";
-      settings: any;
+      type: "toggle" | "select" | "question";
+      [K: string]: any;
     };
   };
   name: string;
@@ -221,7 +250,7 @@ export interface TelegramActionSettings {
 }
 export type TelegramAction = TelegramActionSettings | boolean;
 
-type MyContext = TelegrafContext & {
+export type MyContext = TelegrafContext & {
   match: RegExpExecArray | undefined;
   session?: any;
   auth: boolean;
