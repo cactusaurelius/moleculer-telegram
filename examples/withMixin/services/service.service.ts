@@ -18,30 +18,30 @@ broker.createService({
   actions: {
     hello: {
       handler(ctx: Context<any, any>) {
-        return `Called with params ${JSON.stringify(ctx.params)} and user: ${
-          ctx.meta.user
-        }`;
+        return `Called with params ${JSON.stringify(
+          ctx.params
+        )} and user: ${JSON.stringify(ctx.meta.user)}`;
       },
     },
     notPublished: {
       handler(ctx: Context<any, any>) {
-        return `Called with params ${JSON.stringify(ctx.params)} and user: ${
-          ctx.meta.user
-        }`;
+        return `Called with params ${JSON.stringify(
+          ctx.params
+        )} and user: ${JSON.stringify(ctx.meta.user)}`;
       },
     },
     withParams: {
       handler(ctx: Context<any, any>) {
-        return `Called with params ${JSON.stringify(ctx.params)} and user: ${
-          ctx.meta.user
-        }`;
+        return `Called with params ${JSON.stringify(
+          ctx.params
+        )} and user: ${JSON.stringify(ctx.meta.user)}`;
       },
     },
     returnsSmth: {
       handler(ctx: Context<any, any>) {
-        return `Called with params ${JSON.stringify(ctx.params)} and user: ${
-          ctx.meta.user
-        }`;
+        return `Called with params ${JSON.stringify(
+          ctx.params
+        )} and user: ${JSON.stringify(ctx.meta.user)}`;
       },
     },
   },
