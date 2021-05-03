@@ -17,23 +17,31 @@ broker.createService({
   mixins: [telegramMixin],
   actions: {
     hello: {
-      handler(ctx: Context) {
-        return `Called with params ${JSON.stringify(ctx.params)}`;
+      handler(ctx: Context<any, any>) {
+        return `Called with params ${JSON.stringify(ctx.params)} and user: ${
+          ctx.meta.user
+        }`;
       },
     },
     notPublished: {
-      handler(ctx: Context) {
-        return `Called with params ${JSON.stringify(ctx.params)}`;
+      handler(ctx: Context<any, any>) {
+        return `Called with params ${JSON.stringify(ctx.params)} and user: ${
+          ctx.meta.user
+        }`;
       },
     },
     withParams: {
-      handler(ctx: Context) {
-        return `Called with params ${JSON.stringify(ctx.params)}`;
+      handler(ctx: Context<any, any>) {
+        return `Called with params ${JSON.stringify(ctx.params)} and user: ${
+          ctx.meta.user
+        }`;
       },
     },
     returnsSmth: {
-      handler(ctx: Context) {
-        return `Called with params ${JSON.stringify(ctx.params)}`;
+      handler(ctx: Context<any, any>) {
+        return `Called with params ${JSON.stringify(ctx.params)} and user: ${
+          ctx.meta.user
+        }`;
       },
     },
   },
