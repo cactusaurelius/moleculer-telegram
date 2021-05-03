@@ -18,4 +18,4 @@ $ npm install moleculer-telegram
 # Usage
 [Check Example Here](https://github.com/cactusaurelius/moleculer-telegram/blob/022110d99960983a43a5f66c9118980af6c6571c/examples/withMixin/mixins/telegram.mixin.ts#L1-L53)
 
-_Coming soon..._
+
