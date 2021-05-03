@@ -1,23 +1,23 @@
-import { MyContext } from "./Telegram";
+import { Context } from "./Telegram";
 
 interface SessionOptions {
   property: string;
   store?: Map<any, any> | any;
-  getSessionKey?: (ctx: MyContext) => string | boolean;
+  getSessionKey?: (ctx: Context) => string | boolean;
   ttl?: number;
 }
 export default function TelegrafSession(opts: SessionOptions) {
   const options = {
     property: "session",
     store: new Map(),
-    getSessionKey: (ctx: MyContext) =>
+    getSessionKey: (ctx: Context) =>
       ctx.from && ctx.chat && `${ctx.from.id}:${ctx.chat.id}`,
     ...opts,
   };
 
   const ttlMs = options.ttl && options.ttl * 1000;
 
-  return (ctx: MyContext, next: (A: any) => Promise<any>) => {
+  return (ctx: Context, next: (A: any) => Promise<any>) => {
     const key = options.getSessionKey(ctx);
     if (!key) {
       return next(ctx);

@@ -15,7 +15,7 @@ process.env.TELEGRAM_BOT_TOKEN = "token";
 // Load Service
 broker.createService({
   name: "someservice",
-  mixins: [TelegramMixin({ usernames: ["amzzak"] })],
+  mixins: [TelegramMixin()],
   actions: {
     hello: {
       telegram: true,

@@ -1,10 +1,22 @@
-import { TelegramMixin } from "../../../src";
+import { Context as TelegramContext, TelegramMixin } from "../../../src";
 
 const botToken = process.env.TELEGRAM_BOT_TOKEN || "token";
 
 export default {
-  mixins: [TelegramMixin({ botToken, usernames: ["amzzak"] })],
-  settings: { telegram: true },
+  mixins: [TelegramMixin({ botToken })],
+  settings: {
+    telegram: {
+      authentication(ctx: TelegramContext) {
+        if (ctx.from.username == "telegram username") {
+          return Promise.resolve({
+            id: "idididid",
+            email: "abdo.zak.amz@gmail.com",
+            type: "admin",
+          });
+        }
+      },
+    },
+  },
   actions: {
     hello: {
       telegram: true,

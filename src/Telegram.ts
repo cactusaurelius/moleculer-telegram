@@ -25,34 +25,19 @@ export function TelegramLogger() {}
 
 export function TelegramMixin({
   botToken = process.env.TELEGRAM_BOT_TOKEN,
-  usernames,
 }: {
   botToken?: string;
-  usernames: string[];
-}): ServiceSchema {
-  const bot = new Telegraf<MyContext>(botToken);
+  authMiddleware?: (
+    ctx: Context,
+    next: (A: any) => Promise<any>
+  ) => Promise<any>;
+} = {}): ServiceSchema {
+  const bot = new Telegraf<Context>(botToken);
   bot.use(
     session({
       property: "session",
     })
   );
-  // const myQuestion = new TelegrafStatelessQuestion<MyContext>(
-  //   "unique",
-  //   async (context, additionalState) => {
-  //     const answer = context.message.text;
-  //     console.log("user responded with", answer);
-  //     await replyMenuToContext(menuTemplate, context, additionalState);
-  //   }
-  // );
-  // bot.use(myQuestion.middleware());
-
-  bot.use((ctx, next) => {
-    if (ctx.chat.type == "private" && usernames.includes(ctx.chat.username)) {
-      return next();
-    } else {
-      return ctx.reply(`You're Not Authorized 👎🏾`);
-    }
-  });
 
   bot.use(async (ctx, next) => {
     if (ctx.callbackQuery && "data" in ctx.callbackQuery) {
@@ -78,14 +63,12 @@ export function TelegramMixin({
       },
     },
     methods: {
-      generateTelegramMenu(
-        services: ServiceSchema[]
-      ): MenuMiddleware<MyContext> {
-        const menu = new MenuTemplate<MyContext>("Services");
+      generateTelegramMenu(services: ServiceSchema[]): MenuMiddleware<Context> {
+        const menu = new MenuTemplate<Context>("Services");
         services.forEach((service) => {
           // if (!service.settings.telegram) return;
           if (typeof service.actions === "object" && service.actions !== null) {
-            const serviceMenu = new MenuTemplate<MyContext>(service.name);
+            const serviceMenu = new MenuTemplate<Context>(service.name);
             try {
               Object.entries<any>(service.actions).forEach(
                 ([action, settings]: [
@@ -124,14 +107,14 @@ export function TelegramMixin({
                     typeof telegram.params === "object" &&
                     telegram.params !== null
                   ) {
-                    const actionMenu = new MenuTemplate<MyContext>(
+                    const actionMenu = new MenuTemplate<Context>(
                       settings.rawName
                     );
 
                     /**
                      * Params Menu
                      */
-                    const paramsMenu = new MenuTemplate<MyContext>("params");
+                    const paramsMenu = new MenuTemplate<Context>("params");
 
                     Object.entries(telegram.params).forEach(
                       ([param, settings]) => {
@@ -210,7 +193,7 @@ export function TelegramMixin({
             }
           }
         });
-        const menuMiddleware = new MenuMiddleware<MyContext>("/", menu);
+        const menuMiddleware = new MenuMiddleware<Context>("/", menu);
         this.logger.info(menuMiddleware.tree());
         return menuMiddleware;
       },
@@ -230,6 +213,27 @@ export function TelegramMixin({
         this.logger.info(new Date(), "Bot started as", bot.botInfo?.username);
       },
     },
+    async started() {
+      /**
+       * Adding Authentication Middleware
+       */
+      if (typeof this.settings?.telegram?.authentication == "function") {
+        bot.use(async (ctx, next) => {
+          try {
+            const { authentication } = this.settings.telegram;
+            const user = await authentication(ctx);
+            if (!user) {
+              ctx.reply("You're Not Authorized 👎🏾 ");
+              throw "Telegram Authorization Error";
+            }
+            ctx.user = user;
+            return next();
+          } catch {
+            throw "Telegram Authorization Error";
+          }
+        });
+      }
+    },
     async stopped() {
       bot.stop();
     },
@@ -237,7 +241,7 @@ export function TelegramMixin({
 }
 
 export interface TelegramActionSettings {
-  auth: (ctx: MyContext) => {} | string | boolean;
+  auth: (ctx: Context) => {} | string | boolean;
   defParam: any;
   params: {
     [K: string]: {
@@ -250,9 +254,10 @@ export interface TelegramActionSettings {
 }
 export type TelegramAction = TelegramActionSettings | boolean;
 
-export type MyContext = TelegrafContext & {
+export type Context = TelegrafContext & {
   match: RegExpExecArray | undefined;
   session?: any;
   auth: boolean;
+  user: any;
   message: { text: string };
 };
