@@ -85,10 +85,15 @@ export function TelegramMixin({
                       settings.rawName,
                       {
                         do: async (ctx) => {
+                          const { user } = ctx;
                           this.logger.info(
                             `Calling Action ${action} from Telegram`
                           );
-                          const res = this.broker.call(action, defParam || {});
+                          const res = this.broker.call(
+                            action,
+                            defParam || {},
+                            (user && { meta: { user } }) || {}
+                          );
                           if (telegram.async) {
                             await ctx.reply("Action Called");
                           } else {
@@ -158,15 +163,20 @@ export function TelegramMixin({
                      */
                     actionMenu.interact("Call", `${settings.rawName}`, {
                       do: async (ctx) => {
+                        const { user } = ctx;
                         this.logger.info(
                           `Calling Action ${action} from Telegram`
                         );
                         const params = ctx.session.actions?.[action];
 
-                        const res = this.broker.call(action, {
-                          ...(defParam || {}),
-                          ...(params || {}),
-                        });
+                        const res = this.broker.call(
+                          action,
+                          {
+                            ...(defParam || {}),
+                            ...(params || {}),
+                          },
+                          (user && { meta: { user } }) || {}
+                        );
 
                         if (telegram.async) {
                           await ctx.reply("Action Called");
