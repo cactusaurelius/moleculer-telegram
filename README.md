@@ -6,8 +6,6 @@
 
 This is a mixin for MoleculerJs to generate a telegram bot UI to easily call discoverable moleculer actions
 
-*Currently in development progress*
-
 ## Installation
 
 ```
