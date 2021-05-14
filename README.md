@@ -1,7 +1,7 @@
 # moleculer-telegram
 
-[![NPM](https://nodei.co/npm/moleculer-telegram.png?downloads=true&stars=true)](https://nodei.co/npm/moleculer-telegram/)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/cactusaurelius/moleculer-telegram/issues)
+[![NPM](https://nodei.co/npm/moleculer-telegram.png?downloads=true&stars=true)](https://nodei.co/npm/moleculer-telegram/)
 
 
 This is a mixin for MoleculerJs to generate a telegram bot UI to easily call discoverable moleculer actions
