@@ -208,11 +208,10 @@ export function TelegramMixin({
         return menuMiddleware;
       },
       async onChange() {
-        const services: Array<ServiceSchema> = this.broker.registry.getServiceList(
-          {
+        const services: Array<ServiceSchema> =
+          this.broker.registry.getServiceList({
             withActions: true,
-          }
-        );
+          });
         const menu = this.generateTelegramMenu(services);
         bot.command("start", async (ctx) => menu.replyToContext(ctx));
         bot.use(menu.middleware());
